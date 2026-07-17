@@ -70,7 +70,6 @@ export default function JefeView() {
   const [porPaginaAprob, setPorPaginaAprob] = useState(10);
 
   // ── Fetch solicitudes pendientes ──────────────────────────────────────────
-  
      const fetchPendientes = async () => {
   setCargandoLista(true);
   setErrorLista(null);

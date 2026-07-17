@@ -109,7 +109,7 @@ export default function EmbarcacionesPage() {
     setCargandoFlota(true);
     setErrorFlota(null);
     try {
-      const res = await apiFetch("/api/embarcaciones");
+      const res = await apiFetch("/api/nautica/embarcaciones");
       if (!res.ok) throw new Error(`Error ${res.status}: no se pudo cargar la flota.`);
       const data = await res.json();
       setEmbarcaciones(data);
@@ -122,7 +122,7 @@ export default function EmbarcacionesPage() {
 
   const fetchRadas = async () => {
     try {
-      const res = await apiFetch("/api/radas");
+      const res = await apiFetch("/api/nautica/radas");
       if (!res.ok) return;
       const data = await res.json();
       setRadas(data);
@@ -176,7 +176,7 @@ export default function EmbarcacionesPage() {
     setEnviando(true);
     setErrorForm(null);
     try {
-      const res = await apiFetch("/api/embarcaciones/crear", {
+      const res = await apiFetch("/api/nautica/embarcaciones/crear", {
   method: "POST",
   body: JSON.stringify({
     id_socio: Number(form.id_socio),
@@ -205,7 +205,7 @@ export default function EmbarcacionesPage() {
 
   const handleValidar = async (id: number, nombre: string) => {
     try {
-      const res = await apiFetch(`/api/embarcaciones/${id}/validar`, {
+      const res = await apiFetch(`/api/nautica/embarcaciones/${id}/validar`, {
   method: "PUT",
 });
       if (res.ok || res.status === 200) {
@@ -229,7 +229,7 @@ export default function EmbarcacionesPage() {
   const handleAsignar = async () => {
     if (!embSeleccionada || !radaDialog) return;
     try {
-      const res = await apiFetch(`/api/radas/${radaDialog.radaId}/asignar`, {
+      const res = await apiFetch(`/api/nautica/radas/${radaDialog.radaId}/asignar`, {
   method: "PUT",
   body: JSON.stringify({ id_embarcacion: Number(embSeleccionada) }),
 });
@@ -248,7 +248,7 @@ export default function EmbarcacionesPage() {
   const handleLiberar = async () => {
     if (!radaDialog) return;
     try {
-      const res = await apiFetch(`/api/radas/${radaDialog.radaId}/liberar`, {
+      const res = await apiFetch(`/api/nautica/radas/${radaDialog.radaId}/liberar`, {
   method: "PUT",
 });
       if (res.ok) {

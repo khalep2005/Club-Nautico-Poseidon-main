@@ -60,7 +60,7 @@ export default function ZarpesPage() {
 
   const fetchZarpes = async () => {
     try {
-      const res = await apiFetch("/api/zarpes");
+      const res = await apiFetch("/api/nautica/zarpes");
       if (res.ok) {
         const data = await res.json();
         setZarpes(data);
@@ -73,8 +73,8 @@ export default function ZarpesPage() {
   const fetchData = async () => {
     try {
       const [embsRes, tripRes, socRes] = await Promise.all([
-  apiFetch("/api/embarcaciones"),
-  apiFetch("/api/tripulantes"),
+  apiFetch("/api/nautica/embarcaciones"),
+  apiFetch("/api/nautica/tripulantes"),
   apiFetch("/api/socios")
 ]);
 
@@ -111,7 +111,7 @@ export default function ZarpesPage() {
     const validarDeudaSocio = async () => {
       setValidandoSocio(true);
       try {
-        const res = await apiFetch(`/api/facturacion/deuda/${selectedSocio}`);
+        const res = await apiFetch(`/api/facturas/deuda/${selectedSocio}`);
 
         if (res.ok) {
           const data = await res.json();
@@ -159,7 +159,7 @@ export default function ZarpesPage() {
 
   const aprobarZarpe = async (id: number | string) => {
     try {
-      const res = await apiFetch(`/api/zarpes/${id}/aprobar`, {
+      const res = await apiFetch(`/api/nautica/zarpes/${id}/aprobar`, {
   method: "PUT",
 });
       if (res.ok) {
@@ -178,7 +178,7 @@ export default function ZarpesPage() {
   const handleImprimirZarpe = async (id: number | string) => {
     setLoadingPrint(id);
     try {
-     const res = await apiFetch(`/api/zarpes/${id}/documento`);
+     const res = await apiFetch(`/api/nautica/zarpes/${id}/documento`);
       if (res.ok) {
         const data = await res.json();
         setZarpeParaImprimir(data);
@@ -243,7 +243,9 @@ export default function ZarpesPage() {
         pasajeros
       };
 
-      const res = await apiFetch("/api/zarpes/crear", {
+      // Nota: a diferencia de embarcaciones/tripulantes, la ruta de crear zarpe
+      // en el backend NO tiene sufijo /crear: es un POST directo a /api/nautica/zarpes.
+      const res = await apiFetch("/api/nautica/zarpes", {
   method: "POST",
   body: JSON.stringify(body)
 });

@@ -41,7 +41,7 @@ export default function DashboardNaviero() {
   useEffect(() => {
   const fetchDashboardData = async () => {
     try {
-      const response = await apiFetch("/api/dashboard/naviero");
+      const response = await apiFetch("/api/nautica/dashboard/naviero");
 
       if (!response.ok) {
         throw new Error("Error al obtener los datos del dashboard");

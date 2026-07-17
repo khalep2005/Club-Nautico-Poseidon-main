@@ -42,7 +42,6 @@ export default function ModalSolicitarRetiro({
     setLoading(true);
 
     try {
-      // Usamos el helper apiFetch para enviar la petición POST
       const res = await apiFetch("/api/retiros/solicitar", {
         method: "POST",
         body: JSON.stringify({

@@ -171,7 +171,7 @@ export default function SecretariaView() {
   const esServicioDisponible = (servicio: string) =>
     disponibilidadServicios[servicio]?.disponible !== false;
 
-  //   PRECIOS DE SERVICIOS 
+  //   PRECIOS DE SERVICIOS
   const fetchPreciosServicios = async () => {
     setCargandoPrecios(true);
     try {
@@ -268,7 +268,7 @@ export default function SecretariaView() {
     }
   };
 
-  // CONSULTA AL BACKEND: MÉTRICAS 
+  // CONSULTA AL BACKEND: MÉTRICAS
   const fetchMetricas = async () => {
     try {
       const res = await apiFetch("/api/dashboard/secretaria");
@@ -282,7 +282,7 @@ export default function SecretariaView() {
     } catch {  }
   };
 
-  //   LISTAR SOLICITUDES 
+  //   LISTAR SOLICITUDES
   const fetchSolicitudes = async () => {
     setCargandoLista(true);
     setErrorLista(null);
@@ -398,21 +398,28 @@ export default function SecretariaView() {
       return;
     }
 
+    if (!socioEncontrado) {
+      alert("Busca y selecciona un socio válido antes de registrar el servicio.");
+      return;
+    }
+
     setGuardandoServicio(true);
     try {
       const descripcionFinal = esServicioInstructor
         ? `Instructor: ${nombreInstructor}${descripcionServicio ? " — " + descripcionServicio : ""}`
         : descripcionServicio || `Cargo por servicio de ${categoriaServicio}`;
 
+      // ConsumoRequest.java (ms-facturacion) espera camelCase, a diferencia de
+      // solicitudes/retiros que usan snake_case -- este endpoint ya existía
+      // antes de hoy y no se tocó, por eso el formato es distinto.
       const res = await apiFetch("/api/consumos", {
         method: "POST",
         body: JSON.stringify({
-          tipo_doc: tipoDocServicio,
-          dni_socio: dniSocioServicio,
+          idSocio: socioEncontrado.idSocio,
           servicio: categoriaServicio,
           monto: parseFloat(montoServicio),
           descripcion: descripcionFinal,
-          fecha: new Date().toISOString(),
+          estado: "PENDIENTE",
         }),
       });
 

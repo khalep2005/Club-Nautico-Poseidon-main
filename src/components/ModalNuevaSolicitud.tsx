@@ -181,7 +181,6 @@ export default function ModalNuevaSolicitud({
     setErrorMsg(null);
 
     try {
-      
       const res = await apiFetch("/api/solicitudes/crear", {
         method: "POST",
         body: JSON.stringify({

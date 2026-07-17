@@ -1,7 +1,7 @@
-const BASE_URL = "https://api-poseidon.onrender.com";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
-// Confirmado contra authRoutes.js: router.post('/refresh', renovarToken)
-const REFRESH_ENDPOINT = "/api/auth/refresh";
+// El gateway monta auth-service en /auth (no /api/auth): app.use('/auth', createAuthProxy())
+const REFRESH_ENDPOINT = "/auth/refresh";
 
 // Evita que, si varias peticiones fallan con 401 al mismo tiempo, se disparen
 // múltiples renovaciones simultáneas del token. Todas las llamadas comparten

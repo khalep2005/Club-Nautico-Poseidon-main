@@ -5,7 +5,20 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 import { useToast } from "@/hooks/use-toast";
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/auth/login`;
+const API_URL = `${import.meta.env.VITE_API_URL}/auth/login`;
+
+// El backend no devuelve un objeto "usuario" en el login: el rol viaja
+// embebido dentro del propio accessToken (claim "role_id"). Lo decodificamos
+// manualmente (sin librería extra) leyendo el payload del JWT.
+function decodeJwtPayload(token: string): { role_id?: number; sub?: string } {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(base64));
+  } catch {
+    return {};
+  }
+}
 
 export default function LoginPage() {
   const { setCurrentRole } = useRole();
@@ -25,19 +38,21 @@ export default function LoginPage() {
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          correo: email,       
-          contrasena: password 
+        body: JSON.stringify({
+          correo: email,
+          password: password
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        const payload = decodeJwtPayload(data.accessToken);
+
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("id_rol", String(data.usuario.id_rol));
-        
+        localStorage.setItem("id_rol", String(payload.role_id ?? ""));
+
         const rolesMap: Record<number, "Jefe" | "Secretaria" | "Naviero" | "Finanzas" | "Cobranza"> = {
           1: "Jefe",
           2: "Secretaria",
@@ -46,24 +61,24 @@ export default function LoginPage() {
           5: "Cobranza"
         };
 
-        const roleName = rolesMap[data.usuario.id_rol];
+        const roleName = payload.role_id ? rolesMap[payload.role_id] : undefined;
 
         if (roleName) {
-          setCurrentRole(roleName); 
+          setCurrentRole(roleName);
         }
         toast({
           title: "¡Bienvenido a bordo!",
-          description: `Has ingresado como ${data.usuario.nombres}`,
+          description: `Has ingresado como ${payload.sub ?? email}`,
         });
 
         navigate("/dashboard");
       } else {
         toast({
           title: "Error de acceso",
-          description: data.mensaje || "Credenciales incorrectas.",
+          description: data.message || data.mensaje || "Credenciales incorrectas.",
           variant: "destructive",
         });
-        setPassword(""); 
+        setPassword("");
       }
     } catch (error) {
       toast({

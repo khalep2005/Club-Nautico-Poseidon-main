@@ -41,6 +41,9 @@ export default function DashboardJefe() {
   const [porPagina, setPorPagina]         = useState(10);
 
   useEffect(() => {
+  // TODO(backend): "solicitudes" no existe en ningún microservicio -- ver nota
+  // detallada en SecretariaView.tsx (fetchSolicitudes). Es funcionalidad nueva
+  // por construir, no una ruta mal escrita.
   const fetchSolicitudes = async () => {
     setCargandoLista(true);
     setErrorLista(null);

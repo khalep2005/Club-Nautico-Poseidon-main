@@ -7,22 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiFetch } from "@/lib/apiClient";
 
-interface ConsumoDetalle {
-  id_consumo: number;
+interface ConsumoFlatAPI {
+  idConsumo: number;
+  idSocio: number;
   servicio: string;
   monto: number;
   descripcion: string;
-  fecha_consumo: string;
-}
-
-interface SocioConsumosAPI {
-  id_socio: number;
-  dni: string;
-  tipo_doc_siglas: string;
-  nombres: string;
-  apellidos: string;
-  total_consumos: number;
-  consumos: ConsumoDetalle[];
+  fechaConsumo: string;
 }
 
 interface ConsumoPlano {
@@ -49,24 +40,22 @@ export default function HistorialConsumosPage() {
   const fetchConsumos = async () => {
   setCargandoConsumos(true);
   try {
-    const res = await apiFetch("/api/facturacion/consumos");
+    const res = await apiFetch("/api/consumos");
     if (!res.ok) return;
-    const data: SocioConsumosAPI[] = await res.json();
+    const data: ConsumoFlatAPI[] = await res.json();
 
-    const flatList: ConsumoPlano[] = [];
-    data.forEach((socio) => {
-      socio.consumos.forEach((c) => {
-        flatList.push({
-          id_consumo: c.id_consumo,
-          dni: socio.dni,
-          tipo_doc_siglas: socio.tipo_doc_siglas || "DNI",
-          nombre_completo: `${socio.nombres} ${socio.apellidos}`,
-          fecha: c.fecha_consumo,
-          servicio: c.servicio,
-          monto: c.monto,
-        });
-      });
-    });
+    // Nota: ms-facturacion no conoce el nombre/dni del socio (vive en ms-socios,
+    // otro microservicio con su propia base de datos), por eso se usa un
+    // placeholder "Socio #N" -- mismo patrón usado en FacturacionPage.tsx.
+    const flatList: ConsumoPlano[] = data.map((c) => ({
+      id_consumo: c.idConsumo,
+      dni: "",
+      tipo_doc_siglas: "DNI",
+      nombre_completo: `Socio #${c.idSocio}`,
+      fecha: c.fechaConsumo,
+      servicio: c.servicio,
+      monto: c.monto,
+    }));
     setConsumosList(flatList);
   } catch (err: unknown) {
     console.error("Error al obtener historial de consumos:", err);

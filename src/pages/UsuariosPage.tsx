@@ -41,13 +41,15 @@ import { apiFetch } from "@/lib/apiClient";
 // Tipos
 // ---------------------------------------------------------------------------
 
-// Shape que devuelve el backend
+// Shape real que devuelve GET /api/admin/usuarios (auth-service, entidad Usuario):
+// { id, correo, nombres, apellidos, rol } -- "rol" viene como STRING ("1", "2"...),
+// y el campo se llama "id" y "rol", no "id_usuario"/"id_rol" como se asumía antes.
 interface UsuarioAPI {
-  id_usuario: number;
-  nombres:    string;
-  apellidos:  string;
-  correo:     string;
-  id_rol:     number;
+  id:        number;
+  nombres:   string;
+  apellidos: string;
+  correo:    string;
+  rol:       string;
 }
 
 type Rol = "Secretaria" | "Naviero" | "Finanzas" | "Jefe" | "Cobranza";
@@ -139,18 +141,18 @@ export default function UsuariosPage() {
     setCargandoLista(true);
     setErrorLista(null);
     try {
-      const res = await apiFetch("/api/auth/usuarios");
+      const res = await apiFetch("/api/admin/usuarios");
       if (!res.ok) throw new Error(`Error ${res.status}: no se pudo cargar la lista.`);
       const data: UsuarioAPI[] = await res.json();
       const mapeados: Usuario[] = data.map((u) => ({
-        id:         u.id_usuario,
-        id_usuario: u.id_usuario,
+        id:         u.id,
+        id_usuario: u.id,
         nombres:    u.nombres,
         apellidos:  u.apellidos,
         nombre:     `${u.nombres} ${u.apellidos}`,
         correo:     u.correo,
-        rol:        rolPorId[u.id_rol] ?? "Naviero",
-        id_rol:     u.id_rol,
+        rol:        rolPorId[Number(u.rol)] ?? "Naviero",
+        id_rol:     Number(u.rol),
       }));
       setUsuarios(mapeados);
     } catch (err) {
@@ -176,9 +178,10 @@ export default function UsuariosPage() {
 
   /**
    * handleSubmit
-   * Apunta a POST /api/auth/register.
-   * El desarrollador backend solo necesita asegurarse de que ese endpoint
-   * acepte { nombre, correo, password, rol } y devuelva el usuario creado.
+   * Apunta a POST /auth/register (RegisterRequest.java del auth-service espera
+   * { correo, password, nombres, apellidos, rol } donde "rol" es el ID como STRING,
+   * ej. "1", no un número). La respuesta es { accessToken, refreshToken, tokenType } --
+   * NO devuelve el usuario creado, por eso abajo se sigue usando el fallback Date.now().
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,20 +191,21 @@ export default function UsuariosPage() {
     setError(null);
 
     try {
-      const res = await apiFetch("/api/auth/registrar", {
+      const res = await apiFetch("/auth/register", {
   method: "POST",
   body: JSON.stringify({
-    nombres:    form.nombres,
-    apellidos:  form.apellidos,
-    correo:     form.correo,
-    contrasena: form.contrasena,
-    id_rol:     Number(rolIdMap[form.rol as Rol]),
+    nombres:   form.nombres,
+    apellidos: form.apellidos,
+    correo:    form.correo,
+    password:  form.contrasena,
+    rol:       String(rolIdMap[form.rol as Rol]),
   }),
 });
 
       const data = await res.json();
 
-      if (res.status === 201) {
+      // El backend responde 200 OK (no 201) y sin id_usuario -- ver comentario arriba.
+      if (res.ok) {
         // Éxito: agregar a la tabla local y cerrar modal
         const nuevoUsuario: Usuario = {
           id:         data.id_usuario ?? Date.now(),
@@ -216,8 +220,11 @@ export default function UsuariosPage() {
         setUsuarios((prev) => [...prev, nuevoUsuario]);
         setForm(formVacio);
         setDialogAbierto(false);
+        // Refrescamos contra el backend para reemplazar el id local (Date.now())
+        // por el id_usuario real una vez que el usuario aparezca en la lista.
+        await fetchUsuarios();
       } else {
-        setError(data.mensaje ?? "Error al registrar el usuario.");
+        setError(data.message ?? data.mensaje ?? "Error al registrar el usuario.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
@@ -231,10 +238,10 @@ export default function UsuariosPage() {
     if (!usuarioAEliminar) return;
 
     try {
-      const res = await apiFetch(`/api/auth/usuarios/${usuarioAEliminar.id_usuario}`, {
+      const res = await apiFetch(`/api/admin/usuarios/${usuarioAEliminar.id_usuario}`, {
   method: "DELETE",
 });
-      if (res.status === 200) {
+      if (res.ok) {
         setUsuarios((prev) => prev.filter((u) => u.id_usuario !== usuarioAEliminar.id_usuario));
         setUsuarioAEliminar(null);
       } else {
@@ -270,18 +277,18 @@ export default function UsuariosPage() {
     setErrorEdit(null);
 
     try {
-      const res = await apiFetch(`/api/auth/usuarios/${usuarioEnEdicion.id_usuario}`, {
+      const res = await apiFetch(`/api/admin/usuarios/${usuarioEnEdicion.id_usuario}`, {
   method: "PUT",
   body: JSON.stringify({
-    nombres:   editForm.nombres,
+    nombres: editForm.nombres,
     apellidos: editForm.apellidos,
-    id_rol:    Number(rolIdMap[editForm.rol as Rol]),
+    id_rol: Number(rolIdMap[editForm.rol as Rol]),
   }),
 });
 
       const data = await res.json().catch(() => ({}));
 
-      if (res.status === 200) {
+      if (res.ok) {
         setUsuarioEnEdicion(null);
         await fetchUsuarios();
       } else {

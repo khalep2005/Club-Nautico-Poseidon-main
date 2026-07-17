@@ -139,9 +139,24 @@ export default function DashboardCobranza() {
   setLoadingPV(true);
   setErrorPV(null);
   try {
-    const res = await apiFetch("/api/facturacion/por-vencer");
+    const res = await apiFetch("/api/cobranza/pendientes");
     if (!res.ok) throw new Error(`Error ${res.status}: no se pudo cargar las facturas por vencer.`);
-      const data = await res.json();
+      const raw: { idFactura: number; idSocio: number; concepto: string; montoBase: number; totalAcumulado: number; fechaVencimiento: string; estadoPago: string }[] = await res.json();
+      const data: FacturaPorVencer[] = raw.map((r) => ({
+        id_factura: r.idFactura,
+        id_socio: r.idSocio,
+        concepto: r.concepto,
+        monto_base: r.montoBase,
+        monto_total: r.totalAcumulado,
+        fecha_emision: "",
+        fecha_vencimiento: r.fechaVencimiento,
+        estado_pago: r.estadoPago,
+        dni: "",
+        nombres: `Socio #${r.idSocio}`,
+        apellidos: "",
+        tipo_doc_siglas: "",
+        numero_cuota: null,
+      }));
       setPorVencerList(data);
       setPagePV(1);
     } catch (err) {
@@ -157,9 +172,8 @@ export default function DashboardCobranza() {
     if (!pFacturaIdPV) return;
     setPayingPV(true);
     try {
-      const res = await apiFetch("/api/facturacion/pagar", {
-  method: "POST",
-  body: JSON.stringify({ id_factura: Number(pFacturaIdPV) }),
+      const res = await apiFetch(`/api/facturas/${pFacturaIdPV}/pagar`, {
+  method: "PATCH",
 });
       if (!res.ok) {
         const errorData = await res.json();
@@ -227,9 +241,25 @@ export default function DashboardCobranza() {
   setErrorM(null);
   try {
     const targetRate = typeof rate === "string" ? rate : sbsRate;
-    const res = await apiFetch(`/api/facturacion/morosos?tasa_mensual=${targetRate}`);
+    const res = await apiFetch(`/api/cobranza/vencidas?tasa_mensual=${targetRate}`);
     if (!res.ok) throw new Error(`Error ${res.status}: no se pudo cargar los socios morosos.`);
-      const data = await res.json();
+      const raw: { idFactura: number; idSocio: number; concepto: string; montoBase: number; interesesCalculados: number; totalAcumulado: number; diasMora: number; estadoPago: string }[] = await res.json();
+      const data: FacturaMorosa[] = raw.map((r) => ({
+        id_factura: r.idFactura,
+        id_socio: r.idSocio,
+        concepto: r.concepto,
+        monto_base: r.montoBase,
+        monto_total: r.totalAcumulado,
+        fecha_emision: "",
+        fecha_vencimiento: "",
+        estado_pago: r.estadoPago,
+        dni: "",
+        nombres: `Socio #${r.idSocio}`,
+        apellidos: "",
+        tipo_doc_siglas: "",
+        interes_sbs: r.interesesCalculados,
+        dias_mora: r.diasMora,
+      }));
       setMorososList(data);
       setPageM(1);
     } catch (err) {
@@ -245,12 +275,8 @@ export default function DashboardCobranza() {
     if (!pFacturaIdM) return;
     setPayingM(true);
     try {
-     const res = await apiFetch("/api/facturacion/pagar", {
-  method: "POST",
-  body: JSON.stringify({
-    id_factura: Number(pFacturaIdM),
-    tasa_mensual: Number(sbsRate),
-  }),
+     const res = await apiFetch(`/api/facturas/${pFacturaIdM}/pagar`, {
+  method: "PATCH",
 });
       if (!res.ok) {
         const errorData = await res.json();
@@ -314,9 +340,23 @@ export default function DashboardCobranza() {
   setLoadingPR(true);
   setErrorPR(null);
   try {
-    const res = await apiFetch("/api/facturacion/pagados");
+    const res = await apiFetch("/api/cobranza/historial");
     if (!res.ok) throw new Error(`Error ${res.status}: no se pudo cargar el historial de pagos.`);
-      const data = await res.json();
+      const raw: { idFactura: number; idSocio: number; concepto: string; montoBase: number; totalAcumulado: number; fechaVencimiento: string }[] = await res.json();
+      const data: PagoRealizado[] = raw.map((r) => ({
+        id_factura: r.idFactura,
+        id_socio: r.idSocio,
+        concepto: r.concepto,
+        monto_base: r.montoBase,
+        monto_total: r.totalAcumulado,
+        fecha_emision: "",
+        fecha_vencimiento: r.fechaVencimiento,
+        fecha_pago: null,
+        dni: "",
+        nombres: `Socio #${r.idSocio}`,
+        apellidos: "",
+        tipo_doc_siglas: "",
+      }));
       setPagosRealizadosList(data);
       setPagePR(1);
     } catch (err) {

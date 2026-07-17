@@ -56,7 +56,7 @@ export default function FormularioTripulante() {
   const fetchTripulantes = async () => {
   setCargando(true);
   try {
-    const res = await apiFetch("/api/tripulantes");
+    const res = await apiFetch("/api/nautica/tripulantes");
     if (res.ok) {
       const data = await res.json();
       setTripulantes(data);
@@ -181,7 +181,7 @@ export default function FormularioTripulante() {
 
     setEnviando(true);
     try {
-      const res = await apiFetch("/api/tripulantes/crear", {
+      const res = await apiFetch("/api/nautica/tripulantes/crear", {
   method: "POST",
   body: JSON.stringify({
     id_tipo_doc: idTipoDoc,

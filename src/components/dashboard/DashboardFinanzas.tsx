@@ -92,7 +92,7 @@ export default function DashboardFinanzas() {
   setCargando(true);
   setError(null);
   try {
-    const res = await apiFetch("/api/facturacion/dashboard");
+    const res = await apiFetch("/api/facturas/dashboard");
     if (!res.ok) throw new Error(`Error ${res.status} al cargar el dashboard.`);
     const json: DashboardData = await res.json();
     setData(json);

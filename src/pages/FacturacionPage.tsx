@@ -93,13 +93,21 @@ export default function FacturacionPage() {
   const [registrosPorPaginaCuentas, setRegistrosPorPaginaCuentas] = useState(10);
   const [paginaActualCuentas, setPaginaActualCuentas] = useState(1);
 
+  // Nota: ms-facturacion no conoce el nombre del socio (vive en ms-socios, otra
+  // base de datos) -- se muestra "Socio #<id>" como placeholder.
   const fetchEstadosCuenta = async () => {
     setCargandoCuentas(true);
     setErrorCuentas(null);
     try {
-      const res = await apiFetch("/api/facturacion/estados-cuenta");
+      const res = await apiFetch("/api/facturas/estados-cuenta");
       if (!res.ok) throw new Error(`Error ${res.status}: no se pudo cargar los estados de cuenta.`);
-      const data: EstadoCuenta[] = await res.json();
+      const raw: { id_socio: number; total_deuda: number; estado: string }[] = await res.json();
+      const data: EstadoCuenta[] = raw.map((r) => ({
+        id_socio: r.id_socio,
+        socio: `Socio #${r.id_socio}`,
+        total_deuda: r.total_deuda,
+        estado: r.estado,
+      }));
       setEstadosCuenta(data);
     } catch (err) {
       setErrorCuentas(err instanceof Error ? err.message : "Error inesperado al cargar estados de cuenta.");
@@ -144,9 +152,17 @@ export default function FacturacionPage() {
     setCargandoConsumos(true);
     setErrorConsumos(null);
     try {
-      const res = await apiFetch("/api/facturacion/consumos-pendientes");
+      const res = await apiFetch("/api/consumos/sin-facturar/agrupados");
       if (!res.ok) throw new Error(`Error ${res.status}: no se pudo cargar los consumos pendientes.`);
-      const data: SocioConConsumos[] = await res.json();
+      const raw: { id_socio: number; total_consumos: number; consumos: ConsumoDetalle[] }[] = await res.json();
+      const data: SocioConConsumos[] = raw.map((r) => ({
+        id_socio: r.id_socio,
+        dni: "",
+        nombres: `Socio #${r.id_socio}`,
+        apellidos: "",
+        total_consumos: r.total_consumos,
+        consumos: r.consumos,
+      }));
       setConsumosPendientes(data);
     } catch (err) {
       setErrorConsumos(err instanceof Error ? err.message : "Error inesperado al cargar consumos.");
@@ -163,9 +179,18 @@ export default function FacturacionPage() {
     setCargandoMorosos(true);
     setErrorMorosos(null);
     try {
-      const res = await apiFetch("/api/facturacion/morosos");
+      const res = await apiFetch("/api/cobranza/vencidas");
       if (!res.ok) throw new Error(`Error ${res.status}: no se pudo cargar los socios morosos.`);
-      const data: SocioMoroso[] = await res.json();
+      const raw: { idFactura: number; idSocio: number; totalAcumulado: number; estadoPago: string; diasMora: number }[] = await res.json();
+      const data: SocioMoroso[] = raw.map((r) => ({
+        id_factura: r.idFactura,
+        id_socio: r.idSocio,
+        nombres: `Socio #${r.idSocio}`,
+        apellidos: "",
+        monto_total: r.totalAcumulado,
+        estado_pago: r.estadoPago,
+        dias_mora: r.diasMora,
+      }));
       setMorosos(data);
     } catch (err) {
       setErrorMorosos(err instanceof Error ? err.message : "Error inesperado al cargar morosos.");
@@ -197,7 +222,7 @@ export default function FacturacionPage() {
     e.preventDefault();
     if (!fSocio || !facturaSeleccionada) return;
     try {
-      const res = await apiFetch("/api/facturacion/fraccionar", {
+      const res = await apiFetch("/api/facturas/fraccionar", {
   method: "POST",
   body: JSON.stringify({
     id_factura: Number(fSocio),
@@ -224,10 +249,12 @@ export default function FacturacionPage() {
     }
   }
 
+  // Nota: la generación masiva solo consolida consumos pendientes -- no agrega
+  // membresía fija ni cobro de radas (esos datos viven en ms-socios/ms-nautica).
   async function handleGenerarFacturacion() {
     setGenerandoFacturacion(true);
     try {
-      const res = await apiFetch("/api/facturacion/generar", {
+      const res = await apiFetch("/api/facturas/generar", {
   method: "POST",
 });
       const data = await res.json();

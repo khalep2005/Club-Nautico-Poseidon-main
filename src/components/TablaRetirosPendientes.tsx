@@ -69,6 +69,8 @@ export default function TablaRetirosPendientes() {
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<SolicitudRetiro | null>(null);
 
   // Cargar solicitudes de retiro pendientes desde el backend
+  // Nota: deuda_pendiente siempre viene en 0 -- el backend de microservicios
+  // no valida deuda cruzando a ms-facturacion todavía (ver RetiroService.java).
   const fetchSolicitudes = async () => {
     setLoading(true);
     setError(null);
